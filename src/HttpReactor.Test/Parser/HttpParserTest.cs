@@ -12,7 +12,8 @@ namespace HttpReactor.Test.Parser
         [Test]
         public void Constructor()
         {
-            using (new HttpParser(HttpParserType.Both))
+            using (new HttpParser(HttpParserType.Both,
+                new EventHttpParserHandler()))
             {
             }
         }
@@ -32,10 +33,10 @@ namespace HttpReactor.Test.Parser
             var requestBytes = Encoding.UTF8.GetBytes(request);
             var eventHandler = new EventHttpParserHandler();
 
-            using (var parser = new HttpParser(HttpParserType.Both))
+            using (var parser = new HttpParser(HttpParserType.Both, eventHandler))
             {
                 var buffer = new ArraySegment<byte>(requestBytes);
-                var parsed = parser.Execute(buffer, eventHandler);
+                var parsed = parser.Execute(buffer);
 
                 Assert.AreEqual(requestBytes.Length, parsed);
                 CollectionAssert.AreEqual(new[]
