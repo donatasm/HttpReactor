@@ -17,7 +17,36 @@ namespace HttpReactor.Parser
         {
             _handler = handler;
             _parser = new UnmanagedMemory(HttpParserNative.Size());
-            _settings = new HttpParserSettings
+            _settings = SetupParserSettings();
+
+            HttpParserNative.Init(_parser.IntPtr, type);
+        }
+
+        public int Execute(ArraySegment<byte> buffer)
+        {
+            _buffer = buffer;
+
+            using (var pin = new BytePin(_buffer.Array))
+            {
+                _bufferPinPtr = pin[_buffer.Offset];
+                var lengthPtr = new UIntPtr((uint)_buffer.Count);
+                var parsedPtr = HttpParserNative.Execute(_parser.IntPtr,
+                    ref _settings, _bufferPinPtr, lengthPtr);
+
+                EnsureSuccess();
+
+                return (int)parsedPtr.ToUInt32();
+            }
+        }
+
+        public void Dispose()
+        {
+            _parser.Dispose();
+        }
+
+        private HttpParserSettings SetupParserSettings()
+        {
+            return new HttpParserSettings
             {
                 OnMessageBegin = parserPtr =>
                 {
@@ -48,30 +77,6 @@ namespace HttpReactor.Parser
                     return 0;
                 }
             };
-
-            HttpParserNative.Init(_parser.IntPtr, type);
-        }
-
-        public int Execute(ArraySegment<byte> buffer)
-        {
-            _buffer = buffer;
-
-            using (var pin = new BytePin(_buffer.Array))
-            {
-                _bufferPinPtr = pin[_buffer.Offset];
-                var lengthPtr = new UIntPtr((uint)_buffer.Count);
-                var parsedPtr = HttpParserNative.Execute(_parser.IntPtr,
-                    ref _settings, _bufferPinPtr, lengthPtr);
-
-                EnsureSuccess();
-
-                return (int)parsedPtr.ToUInt32();
-            }
-        }
-
-        public void Dispose()
-        {
-            _parser.Dispose();
         }
 
         // Get number of bytes between currently parsed body pointer and pinned
