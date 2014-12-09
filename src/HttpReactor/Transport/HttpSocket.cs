@@ -18,7 +18,7 @@ namespace HttpReactor.Transport
             };
         }
 
-        public void Connect(EndPoint endPoint, TimeSpan timeout)
+        public void Connect(EndPoint endPoint, int timeoutMillis)
         {
             try
             {
@@ -33,17 +33,17 @@ namespace HttpReactor.Transport
                 }
             }
 
-            if (!Poll(timeout, SelectMode.SelectWrite))
+            if (!Poll(timeoutMillis, SelectMode.SelectWrite))
             {
-                ThrowTimeoutException("connect", timeout);
+                ThrowTimeoutException("connect", timeoutMillis);
             }
         }
 
-        public int Send(ArraySegment<byte> buffer, TimeSpan timeout)
+        public int Send(ArraySegment<byte> buffer, int timeoutMillis)
         {
-            if (!Poll(timeout, SelectMode.SelectWrite))
+            if (!Poll(timeoutMillis, SelectMode.SelectWrite))
             {
-                ThrowTimeoutException("send", timeout);
+                ThrowTimeoutException("send", timeoutMillis);
             }
 
             return _socket.Send(buffer.Array, buffer.Offset,
@@ -61,17 +61,17 @@ namespace HttpReactor.Transport
             _socket.Dispose();
         }
 
-        private bool Poll(TimeSpan timeout, SelectMode mode)
+        private bool Poll(int timeoutMillis, SelectMode mode)
         {
-            var totalMicroseconds = (int)(timeout.TotalMilliseconds * 1000);
+            var totalMicroseconds = timeoutMillis * 1000;
             return _socket.Poll(totalMicroseconds, mode);
         }
 
         private static void ThrowTimeoutException(string socketOperation,
-            TimeSpan timeout)
+            int timeoutMillis)
         {
             throw new TimeoutException(String.Format("{0} timeout {1}",
-                socketOperation, timeout));
+                socketOperation, TimeSpan.FromMilliseconds(timeoutMillis)));
         }
     }
 }
