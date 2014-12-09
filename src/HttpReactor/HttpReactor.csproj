@@ -50,6 +50,7 @@
     <Compile Include="Parser\HttpParserType.cs" />
     <Compile Include="Parser\IHttpParserHandler.cs" />
     <Compile Include="Parser\UnmanagedMemory.cs" />
+    <Compile Include="Transport\HttpSocket.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -59,6 +60,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

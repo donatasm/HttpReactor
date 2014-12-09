@@ -140,7 +140,7 @@ namespace HttpReactor.Test.Parser
 
         private static string GetString(IntPtr ptr, UIntPtr length)
         {
-            var size = (int) length.ToUInt32();
+            var size = (int)length.ToUInt32();
             var bytes = new byte[size];
             Marshal.Copy(ptr, bytes, 0, size);
             return Encoding.UTF8.GetString(bytes);
