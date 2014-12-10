@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
 namespace HttpReactor.Transport
 {
-    public sealed class HttpSocket : IDisposable
+    public sealed class HttpSocket : IHttpSocket
     {
         private readonly Socket _socket;
 
@@ -42,6 +43,13 @@ namespace HttpReactor.Transport
 
             return _socket.Send(buffer.Array, buffer.Offset,
                 buffer.Count, SocketFlags.None);
+        }
+
+        public int Send(IList<ArraySegment<byte>> buffers, int timeoutMillis) 
+        {
+            PollOrTimeout("send", SelectMode.SelectWrite, timeoutMillis);
+
+            return _socket.Send(buffers, SocketFlags.None);
         }
 
         public int Receive(ArraySegment<byte> buffer, int timeoutMillis)

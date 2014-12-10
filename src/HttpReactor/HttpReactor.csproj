@@ -50,7 +50,9 @@
     <Compile Include="Parser\HttpParserType.cs" />
     <Compile Include="Parser\IHttpParserHandler.cs" />
     <Compile Include="Parser\UnmanagedMemory.cs" />
+    <Compile Include="Protocol\HttpMessage.cs" />
     <Compile Include="Transport\HttpSocket.cs" />
+    <Compile Include="Transport\IHttpSocket.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

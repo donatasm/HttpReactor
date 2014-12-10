@@ -2,7 +2,7 @@
 using Microsoft.Owin.Hosting;
 using Owin;
 
-namespace HttpReactor.Test.Server
+namespace HttpReactor.Benchmark.Test
 {
     internal sealed class HttpServer
     {
