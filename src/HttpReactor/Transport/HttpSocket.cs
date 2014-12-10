@@ -63,6 +63,16 @@ namespace HttpReactor.Transport
             _socket.Dispose();
         }
 
+        public int SendBufferSize
+        {
+            get { return _socket.SendBufferSize; }
+        }
+
+        public int ReceiveBufferSize
+        {
+            get { return _socket.ReceiveBufferSize; }
+        }
+
         private bool Poll(int timeoutMillis, SelectMode mode)
         {
             var totalMicroseconds = timeoutMillis * 1000;
