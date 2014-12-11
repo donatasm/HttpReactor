@@ -13,7 +13,7 @@ namespace HttpReactor.Benchmark.Test
 
         public static void Main()
         {
-            using (var benchmark = new Get34KB())
+            using (var benchmark = new Get34Kb())
             {
                 benchmark.Init();
 
@@ -31,7 +31,7 @@ namespace HttpReactor.Benchmark.Test
             }
         }
 
-        public sealed class Get34KB : Benchmark
+        public sealed class Get34Kb : Benchmark
         {
             private static readonly string Response = "".PadLeft(34816, '.');
             private const int MaxHeadersLength = 8192;

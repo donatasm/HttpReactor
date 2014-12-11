@@ -10,7 +10,7 @@ namespace HttpReactor.Protocol
 {
     public sealed class HttpMessage 
     {
-        private static readonly byte[] CRLF = { 13, 10 };
+        private static readonly byte[] CrLf = { 13, 10 };
         private static readonly byte[] HeaderSeparator = { 58, 32 };
         private static readonly Encoding Ascii = Encoding.ASCII;
         private const string ContentLengthHeader = "Content-Length";
@@ -50,7 +50,7 @@ namespace HttpReactor.Protocol
         {
             var lineBytes = Ascii.GetBytes(line);
             Write(_headers, lineBytes);
-            Write(_headers, CRLF);
+            Write(_headers, CrLf);
         }
 
         public void WriteHeader(string header, string value)
@@ -60,7 +60,7 @@ namespace HttpReactor.Protocol
             Write(_headers, headerBytes);
             Write(_headers, HeaderSeparator);
             Write(_headers, valueBytes);
-            Write(_headers, CRLF);
+            Write(_headers, CrLf);
         }
 
         public void WriteContentLength()
@@ -73,7 +73,7 @@ namespace HttpReactor.Protocol
         public void Send(int timeoutMicros)
         {
             // append separator between headers and body
-            Write(_headers, CRLF);
+            Write(_headers, CrLf);
 
             var microsLeft = timeoutMicros;
 
@@ -122,7 +122,8 @@ namespace HttpReactor.Protocol
                 }
 
                 var startTimestamp = SystemTimestamp.Current;
-                var read = _socket.Receive(array, offset, count - received, microsLeft);
+                var read = _socket.Receive(array, offset,
+                    count - received, microsLeft);
                 var elapsedMicros = SystemTimestamp.GetElapsedMicros(startTimestamp);
 
                 _parser.Execute(new ArraySegment<byte>(array, offset, read));
