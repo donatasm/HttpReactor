@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
@@ -19,7 +18,7 @@ namespace HttpReactor.Transport
             };
         }
 
-        public void Connect(EndPoint endPoint, int timeoutMillis)
+        public void Connect(EndPoint endPoint, int timeoutMicros)
         {
             try
             {
@@ -34,30 +33,19 @@ namespace HttpReactor.Transport
                 }
             }
 
-            PollOrTimeout("connect", SelectMode.SelectWrite, timeoutMillis);
+            PollOrTimeout("connect", SelectMode.SelectWrite, timeoutMicros);
         }
 
-        public int Send(ArraySegment<byte> buffer, int timeoutMillis)
+        public int Send(byte[] buffer, int offset, int count, int timeoutMicros)
         {
-            PollOrTimeout("send", SelectMode.SelectWrite, timeoutMillis);
-
-            return _socket.Send(buffer.Array, buffer.Offset,
-                buffer.Count, SocketFlags.None);
+            PollOrTimeout("send", SelectMode.SelectWrite, timeoutMicros);
+            return _socket.Send(buffer, offset, count, SocketFlags.None);
         }
 
-        public int Send(IList<ArraySegment<byte>> buffers, int timeoutMillis) 
+        public int Receive(byte[] buffer, int offset, int count, int timeoutMicros)
         {
-            PollOrTimeout("send", SelectMode.SelectWrite, timeoutMillis);
-
-            return _socket.Send(buffers, SocketFlags.None);
-        }
-
-        public int Receive(ArraySegment<byte> buffer, int timeoutMillis)
-        {
-            PollOrTimeout("receive", SelectMode.SelectRead, timeoutMillis);
-
-            return _socket.Receive(buffer.Array, buffer.Offset,
-                buffer.Count, SocketFlags.None);
+            PollOrTimeout("receive", SelectMode.SelectRead, timeoutMicros);
+            return _socket.Receive(buffer, offset, count, SocketFlags.None);
         }
 
         public void Close()
@@ -81,24 +69,19 @@ namespace HttpReactor.Transport
             get { return _socket.ReceiveBufferSize; }
         }
 
-        private bool Poll(int timeoutMillis, SelectMode mode)
-        {
-            var totalMicroseconds = timeoutMillis * 1000;
-            return _socket.Poll(totalMicroseconds, mode);
-        }
-
         private void PollOrTimeout(string socketOperation,
-            SelectMode mode, int timeoutMillis)
+            SelectMode mode, int timeoutMicros)
         {
-            if (!Poll(timeoutMillis, mode))
+            if (timeoutMicros < 0 || !_socket.Poll(timeoutMicros, mode))
             {
-                ThrowTimeoutException(socketOperation, timeoutMillis);
+                ThrowTimeoutException(socketOperation, timeoutMicros);
             }
         }
 
         private static void ThrowTimeoutException(string socketOperation,
-            int timeoutMillis)
+            int timeoutMicros)
         {
+            var timeoutMillis = (double)timeoutMicros/1000;
             throw new TimeoutException(String.Format("{0} timeout {1}",
                 socketOperation, TimeSpan.FromMilliseconds(timeoutMillis)));
         }

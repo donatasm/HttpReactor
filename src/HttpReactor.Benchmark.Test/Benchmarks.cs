@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using HttpReactor.Protocol;
 using HttpReactor.Transport;
@@ -8,13 +9,25 @@ namespace HttpReactor.Benchmark.Test
 {
     internal static class Benchmarks
     {
+        private const int Iterations = 10000;
+
         public static void Main()
         {
             using (var benchmark = new Get34KB())
             {
                 benchmark.Init();
-                benchmark.Run();
-                Console.ReadKey();
+
+                var stopwatch = Stopwatch.StartNew();
+
+                for (var i = 0; i < Iterations; i++)
+                {
+                    benchmark.Run();   
+                }
+
+                var elapsed = stopwatch.Elapsed;
+                Console.WriteLine("{0}", elapsed);
+                Console.WriteLine("{0} ops/sec",
+                    Iterations/elapsed.TotalSeconds);
             }
         }
 
@@ -50,7 +63,7 @@ namespace HttpReactor.Benchmark.Test
                 });
 
                 _client = new HttpSocket();
-                _client.Connect(ListenEndPoint, 100);
+                _client.Connect(ClientEndPoint, 100000); // 100 ms
                 _httpMessage = new HttpMessage(_buffer, MaxHeadersLength, _client);
             }
 
@@ -60,7 +73,8 @@ namespace HttpReactor.Benchmark.Test
                 _httpMessage.WriteHeader("User-Agent", "curl/7.37.0");
                 _httpMessage.WriteHeader("Host", "localhost");
                
-                _httpMessage.Send(100);
+                _httpMessage.Send(10000000);
+                _httpMessage.Recycle();
             }
 
             public override void Dispose()

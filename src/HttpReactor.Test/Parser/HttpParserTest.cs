@@ -36,9 +36,8 @@ namespace HttpReactor.Test.Parser
             using (var parser = new HttpParser(HttpParserType.Both, eventHandler))
             {
                 var buffer = new ArraySegment<byte>(requestBytes);
-                var parsed = parser.Execute(buffer);
+                parser.Execute(buffer);
 
-                Assert.AreEqual(requestBytes.Length, parsed);
                 CollectionAssert.AreEqual(new []
                 {
                     "OnMessageBegin",

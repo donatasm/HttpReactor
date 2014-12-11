@@ -10,8 +10,7 @@ namespace HttpReactor.Benchmark.Test
         public abstract void Dispose();
 
         protected const string ListenUrl = "http://localhost:9090";
-        protected const int ListenPort = 9090;
-        protected static readonly IPEndPoint ListenEndPoint =
+        protected static readonly IPEndPoint ClientEndPoint =
             new IPEndPoint(IPAddress.Loopback, 9090);
     }
 }

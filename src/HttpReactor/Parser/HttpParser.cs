@@ -22,7 +22,7 @@ namespace HttpReactor.Parser
             HttpParserNative.Init(_parser.IntPtr, type);
         }
 
-        public int Execute(ArraySegment<byte> buffer)
+        public void Execute(ArraySegment<byte> buffer)
         {
             _buffer = buffer;
 
@@ -35,7 +35,13 @@ namespace HttpReactor.Parser
 
                 EnsureSuccess();
 
-                return (int)parsedPtr.ToUInt32();
+                var parsed = (int)parsedPtr.ToUInt32();
+                var length = (int)lengthPtr.ToUInt32();
+
+                if (parsed != length)
+                {
+                    throw new HttpParserException("unable to parse");
+                }
             }
         }
 
