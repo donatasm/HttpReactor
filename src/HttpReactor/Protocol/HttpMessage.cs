@@ -16,8 +16,8 @@ namespace HttpReactor.Protocol
         private static readonly byte[] HeaderSeparator = { 58, 32 };
         private static readonly Encoding Ascii = Encoding.ASCII;
         private const string ContentLengthHeader = "Content-Length";
-        private readonly BufferStream _requestHeaders;
-        private readonly BufferStream _requestBody;
+        private readonly BufferStream _requestHeadersStream;
+        private readonly BufferStream _requestBodyStream;
         private readonly ArraySegment<byte> _buffer;
         private readonly int _maxHeadersLength;
         private readonly IHttpSocket _socket;
@@ -39,10 +39,10 @@ namespace HttpReactor.Protocol
             _parser = new HttpParser(HttpParserType.Response,
                 new HttpMessageHandler(this));
 
-            _requestHeaders = new BufferStream(buffer.Array,
+            _requestHeadersStream = new BufferStream(buffer.Array,
                 buffer.Offset, maxHeadersLength, true);
 
-            _requestBody = new BufferStream(buffer.Array, maxHeadersLength,
+            _requestBodyStream = new BufferStream(buffer.Array, maxHeadersLength,
                 buffer.Count - maxHeadersLength, true);
 
             Recycle();
@@ -54,8 +54,8 @@ namespace HttpReactor.Protocol
             _parsedBodyOffset = -1;
             _parsedBodyLength = 0;
             _messageComplete = false;
-            _requestHeaders.Position = 0;
-            _requestBody.Position = 0;
+            _requestHeadersStream.Position = 0;
+            _requestBodyStream.Position = 0;
         }
 
         public void WriteMessageStart(string line)
@@ -77,7 +77,7 @@ namespace HttpReactor.Protocol
 
         public void WriteContentLength()
         {
-            var bodyLength = (int)_requestBody.Position;
+            var bodyLength = (int)_requestBodyStream.Position;
             WriteHeader(ContentLengthHeader,
                 bodyLength.ToString(CultureInfo.InvariantCulture));
         }
@@ -115,19 +115,19 @@ namespace HttpReactor.Protocol
 
         public void Dispose()
         {
-            _requestHeaders.Dispose();
-            _requestBody.Dispose();
+            _requestHeadersStream.Dispose();
+            _requestBodyStream.Dispose();
             _parser.Dispose();
         }
 
         internal int SendAllHeaders(int microsLeft)
         {
-            return SendAll(ToArraySegment(_requestHeaders), microsLeft);
+            return SendAll(ToArraySegment(_requestHeadersStream), microsLeft);
         }
 
         internal int SendAllBody(int microsLeft)
         {
-            return SendAll(ToArraySegment(_requestBody), microsLeft);
+            return SendAll(ToArraySegment(_requestBodyStream), microsLeft);
         }
 
         internal void ReceiveAll(int microsLeft)
@@ -185,7 +185,7 @@ namespace HttpReactor.Protocol
 
         private void WriteHeaderStream(byte[] buffer)
         {
-            WriteStream("headers", _requestHeaders, buffer);
+            WriteStream("headers", _requestHeadersStream, buffer);
         }
 
         private static void WriteStream(string name, MemoryStream stream,
