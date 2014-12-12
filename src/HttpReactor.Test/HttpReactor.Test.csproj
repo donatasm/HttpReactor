@@ -47,6 +47,7 @@
     <Compile Include="Parser\HttpParserNativeTest.cs" />
     <Compile Include="Parser\HttpParserTest.cs" />
     <Compile Include="Parser\UnmanagedMemoryTest.cs" />
+    <Compile Include="Protocol\HttpMessageTest.cs" />
     <Compile Include="Transport\HttpSocketTest.cs" />
   </ItemGroup>
   <ItemGroup>

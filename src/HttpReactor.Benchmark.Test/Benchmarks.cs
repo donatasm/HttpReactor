@@ -74,6 +74,10 @@ namespace HttpReactor.Benchmark.Test
                 _httpMessage.WriteHeader("Host", "localhost");
                
                 _httpMessage.Send(10000000);
+                using (var bodyReader = new StreamReader(_httpMessage.GetBodyStream()))
+                {
+                    bodyReader.ReadToEnd();
+                }
                 _httpMessage.Recycle();
             }
 
@@ -83,6 +87,9 @@ namespace HttpReactor.Benchmark.Test
                 {
                     _server.Dispose();
                 }
+
+                _httpMessage.Dispose();
+                _client.Dispose();
             }
         }
     }
