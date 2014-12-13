@@ -21,4 +21,6 @@ obj/
 _ReSharper*/
 packages/
 *.DotSettings
+.DS_Store
+*.userprefs
 

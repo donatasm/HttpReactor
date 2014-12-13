@@ -5,7 +5,11 @@ namespace HttpReactor.Parser
 {
     internal static class HttpParserNative
     {
+#if __MonoCS__
+        private const string HttpParserLib = "lib/HttpParser_x32.dylib";
+#else
         private const string HttpParserLib = "lib/HttpParser_x64.dll";
+#endif
 
         [DllImport(HttpParserLib, EntryPoint = "http_parser_version")]
         public static extern ulong Version();
