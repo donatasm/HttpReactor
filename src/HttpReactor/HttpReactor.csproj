@@ -49,6 +49,8 @@
     <Compile Include="Transport\HttpSocket.cs" />
     <Compile Include="Transport\IHttpSocket.cs" />
     <Compile Include="Util\SystemTimestamp.cs" />
+    <Compile Include="Client\HttpClient.cs" />
+    <Compile Include="Client\IEndPointProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -71,5 +73,8 @@
     <None Include="lib\HttpParser_x32.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Client\" />
   </ItemGroup>
 </Project>
