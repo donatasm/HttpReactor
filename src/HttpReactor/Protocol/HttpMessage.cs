@@ -15,13 +15,12 @@ namespace HttpReactor.Protocol
         private static readonly byte[] CrLf = { 13, 10 };
         private static readonly byte[] HeaderSeparator = { 58, 32 };
         private static readonly Encoding Ascii = Encoding.ASCII;
-        private const string ContentLengthHeader = "Content-Length";
         private readonly BufferStream _requestHeadersStream;
-        private readonly BufferStream _requestBodyStream;
+        private readonly RequestBodyStream _requestBodyStream;
         private readonly ArraySegment<byte> _buffer;
-        private readonly int _maxHeadersLength;
         private readonly IHttpSocket _socket;
         private readonly HttpParser _parser;
+        private readonly int _maxHeadersLength;
         private bool _messageComplete;
         private int _parsedBodyOffset;
         private int _parsedBodyLength;
@@ -32,18 +31,18 @@ namespace HttpReactor.Protocol
             if (maxHeadersLength > buffer.Count)
                 throw new ArgumentOutOfRangeException("maxHeadersLength");
 
-            _maxHeadersLength = maxHeadersLength;
-
             _buffer = buffer;
             _socket = socket;
+            _maxHeadersLength = maxHeadersLength;
+
             _parser = new HttpParser(HttpParserType.Response,
                 new HttpMessageHandler(this));
 
-            _requestHeadersStream = new BufferStream(buffer.Array,
-                buffer.Offset, maxHeadersLength, true);
+            _requestHeadersStream = new BufferStream(_buffer.Array,
+                _buffer.Offset, maxHeadersLength, true);
 
-            _requestBodyStream = new BufferStream(buffer.Array, maxHeadersLength,
-                buffer.Count - maxHeadersLength, true);
+            _requestBodyStream = new RequestBodyStream(_buffer.Array,
+                _maxHeadersLength, _buffer.Count - maxHeadersLength, this);
 
             Recycle();
         }
@@ -75,13 +74,6 @@ namespace HttpReactor.Protocol
             WriteHeaderStream(CrLf);
         }
 
-        public void WriteContentLength()
-        {
-            var bodyLength = (int)_requestBodyStream.Position;
-            WriteHeader(ContentLengthHeader,
-                bodyLength.ToString(CultureInfo.InvariantCulture));
-        }
-
         public void Send(int timeoutMicros)
         {
             // append separator between headers and body
@@ -100,8 +92,7 @@ namespace HttpReactor.Protocol
         {
             if (!_messageComplete)
             {
-                return new BufferStream(_buffer.Array, _maxHeadersLength,
-                    _buffer.Count - _maxHeadersLength, true);
+                return _requestBodyStream;
             }
 
             if (IsParsedBodyEmpty)
@@ -122,12 +113,14 @@ namespace HttpReactor.Protocol
 
         internal int SendAllHeaders(int microsLeft)
         {
-            return SendAll(ToArraySegment(_requestHeadersStream), microsLeft);
+            return SendAll(ToArraySegment(_requestHeadersStream,
+                _buffer.Offset), microsLeft);
         }
 
         internal int SendAllBody(int microsLeft)
         {
-            return SendAll(ToArraySegment(_requestBodyStream), microsLeft);
+            return SendAll(ToArraySegment(_requestBodyStream,
+                _maxHeadersLength), microsLeft);
         }
 
         internal void ReceiveAll(int microsLeft)
@@ -172,7 +165,7 @@ namespace HttpReactor.Protocol
             {
                 var startTimestamp = SystemTimestamp.Current;
                 var read = _socket.Receive(array, offset,
-                    maxSize - totalReceived, microsLeft);
+                               maxSize - totalReceived, microsLeft);
                 var elapsedMicros = SystemTimestamp.GetElapsedMicros(startTimestamp);
 
                 _parser.Execute(new ArraySegment<byte>(array, offset, read));
@@ -203,11 +196,12 @@ namespace HttpReactor.Protocol
             stream.Write(buffer, 0, buffer.Length);
         }
 
-        private static ArraySegment<byte> ToArraySegment(MemoryStream stream)
+        private static ArraySegment<byte> ToArraySegment(MemoryStream stream,
+            int offset)
         {
             var array = stream.GetBuffer();
             var count = (int)stream.Position;
-            return new ArraySegment<byte>(array, 0, count);
+            return new ArraySegment<byte>(array, offset, count);
         }
 
         private class HttpMessageHandler : IHttpParserHandler
@@ -245,6 +239,49 @@ namespace HttpReactor.Protocol
             public void OnMessageComplete()
             {
                 _message._messageComplete = true;
+            }
+        }
+
+        private class BufferStream : MemoryStream
+        {
+            public BufferStream(byte[] buffer,
+                int offset, int count, bool writable)
+                : base(buffer, offset, count, writable, true)
+            {
+            }
+
+            public BufferStream(ArraySegment<byte> buffer, bool writable)
+                : this(buffer.Array, buffer.Offset, buffer.Count, writable)
+            {
+            }
+        }
+
+        private sealed class RequestBodyStream : BufferStream
+        {
+            private const string ContentLengthHeader = "Content-Length";
+            private readonly HttpMessage _message;
+
+            public RequestBodyStream(byte[] buffer,
+                int offset, int count, HttpMessage message)
+                : base(buffer, offset, count, true)
+            {
+                _message = message;
+            }
+
+            public override void Close()
+            {
+            }
+
+            public override void Flush()
+            {
+                WriteContentLength();
+            }
+
+            private void WriteContentLength()
+            {
+                var bodyLength = (int)Position;
+                _message.WriteHeader(ContentLengthHeader,
+                    bodyLength.ToString(CultureInfo.InvariantCulture));
             }
         }
     }
