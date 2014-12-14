@@ -36,7 +36,6 @@
   <ItemGroup>
     <Compile Include="Benchmarks.cs" />
     <Compile Include="HttpServer.cs" />
-    <Compile Include="Benchmark.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Owin">

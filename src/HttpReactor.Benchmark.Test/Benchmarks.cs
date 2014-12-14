@@ -3,13 +3,14 @@ using HttpReactor.Protocol;
 using HttpReactor.Transport;
 using System.Net;
 using System.IO;
+using System.Diagnostics;
 
 namespace HttpReactor.Benchmark.Test
 {
     internal static class Benchmarks
     {
         private static readonly IPEndPoint ClientEndPoint =
-            new IPEndPoint(IPAddress.Loopback, 8081);
+            new IPEndPoint(IPAddress.Loopback, 8080);
 
         private const int _100ms = 100000;
 
@@ -21,26 +22,31 @@ namespace HttpReactor.Benchmark.Test
             using (var message = new HttpMessage(buffer, 8192, socket))
             {
                 socket.Connect(ClientEndPoint, _100ms);
-                message.WriteMessageStart("POST / HTTP/1.1");
-                message.WriteHeader("User-Agent", "curl/7.37.0");
-                message.WriteHeader("Host", "localhost");
+                const int iterations = 100;
+                var stopwatch = Stopwatch.StartNew();
 
-                using (var writer = new StreamWriter(message.GetBodyStream()))
+                for (var i = 0; i < iterations; i++)
                 {
-                    writer.WriteLine("Hello, world!");
+                    message.WriteMessageStart("GET / HTTP/1.1");
+                    message.WriteHeader("User-Agent", "curl/7.37.0");
+                    //message.WriteHeader("Connection", "Keep-Alive");
+                    message.WriteHeader("Host", "localhost");
+
+                    message.Send(_100ms);
+
+                    using (var reader = new StreamReader(message.GetBodyStream()))
+                    {
+                        reader.ReadToEnd();
+                    }
+
+                    message.Recycle();
                 }
 
-                message.Send(_100ms);
-
-                using (var reader = new StreamReader(message.GetBodyStream()))
-                {
-                    Console.WriteLine(reader.ReadToEnd());
-                }
-
-                message.Recycle();
+                var elapsed = stopwatch.Elapsed;
+                Console.WriteLine(elapsed);
+                Console.WriteLine("{0} ops/sec",
+                    iterations / elapsed.TotalSeconds);
             }
-
-            Console.WriteLine("DONE!");
         }
     }
 }
