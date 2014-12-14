@@ -202,6 +202,10 @@ namespace HttpReactor.Test.Protocol
             {
             }
 
+            public void Reconnect(EndPoint endPoint, int timeoutMicros)
+            {
+            }
+
             public void Close()
             {
             }

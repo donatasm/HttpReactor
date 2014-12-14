@@ -50,6 +50,7 @@ namespace HttpReactor.Protocol
         public void Recycle()
         {
             Status = null;
+            _parser.Init();
             _parsedBodyOffset = -1;
             _parsedBodyLength = 0;
             _messageComplete = false;

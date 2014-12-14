@@ -36,6 +36,12 @@ namespace HttpReactor.Transport
             PollOrTimeout("connect", SelectMode.SelectWrite, timeoutMicros);
         }
 
+        public void Reconnect(EndPoint endPoint, int timeoutMicros)
+        {
+            _socket.Disconnect(true);
+            Connect(endPoint, timeoutMicros);
+        }
+
         public int Send(byte[] buffer, int offset, int count, int timeoutMicros)
         {
             PollOrTimeout("send", SelectMode.SelectWrite, timeoutMicros);
@@ -81,7 +87,7 @@ namespace HttpReactor.Transport
         private static void ThrowTimeoutException(string socketOperation,
             int timeoutMicros)
         {
-            var timeoutMillis = (double)timeoutMicros/1000;
+            var timeoutMillis = (double)timeoutMicros / 1000;
             throw new TimeoutException(String.Format("{0} timeout {1}",
                 socketOperation, TimeSpan.FromMilliseconds(timeoutMillis)));
         }

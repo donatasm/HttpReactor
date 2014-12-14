@@ -9,17 +9,26 @@ namespace HttpReactor.Parser
         private const string Success = "success";
         private readonly UnmanagedMemory _parser;
         private readonly IHttpParserHandler _handler;
+        private readonly HttpParserType _type;
         private HttpParserSettings _settings;
-        private ArraySegment<byte> _buffer; // current buffer parser executing on
-        private IntPtr _bufferPinPtr; // current offset address of pinned byte buffer
+        // current buffer parser executing on
+        private ArraySegment<byte> _buffer;
+        // current offset address of pinned byte buffer
+        private IntPtr _bufferPinPtr;
 
         public HttpParser(HttpParserType type, IHttpParserHandler handler)
         {
+            _type = type;
             _handler = handler;
             _parser = new UnmanagedMemory(HttpParserNative.Size());
             _settings = SetupParserSettings();
 
-            HttpParserNative.Init(_parser.IntPtr, type);
+            Init();
+        }
+
+        public void Init()
+        {
+            HttpParserNative.Init(_parser.IntPtr, _type);
         }
 
         public void Execute(ArraySegment<byte> buffer)
@@ -31,7 +40,7 @@ namespace HttpReactor.Parser
                 _bufferPinPtr = pin[_buffer.Offset];
                 var lengthPtr = new UIntPtr((uint)_buffer.Count);
                 var parsedPtr = HttpParserNative.Execute(_parser.IntPtr,
-                    ref _settings, _bufferPinPtr, lengthPtr);
+                                    ref _settings, _bufferPinPtr, lengthPtr);
 
                 EnsureSuccess();
 
@@ -87,7 +96,7 @@ namespace HttpReactor.Parser
 
         // Get number of bytes between currently parsed body pointer and pinned
         // buffer pointer (a pointer we started parsing).
-        // This is needed for calculating the offset of the body array segment 
+        // This is needed for calculating the offset of the body array segment
         private static int GetBodyOffset(IntPtr bodyPtr, ref IntPtr bufferPinPtr)
         {
             return (int)(bodyPtr.ToInt64() - bufferPinPtr.ToInt64());

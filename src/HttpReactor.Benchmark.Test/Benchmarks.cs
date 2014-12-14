@@ -4,6 +4,7 @@ using HttpReactor.Transport;
 using System.Net;
 using System.IO;
 using System.Diagnostics;
+using System.Net.Sockets;
 
 namespace HttpReactor.Benchmark.Test
 {
@@ -22,7 +23,7 @@ namespace HttpReactor.Benchmark.Test
             using (var message = new HttpMessage(buffer, 8192, socket))
             {
                 socket.Connect(ClientEndPoint, _100ms);
-                const int iterations = 100;
+                const int iterations = 100000000;
                 var stopwatch = Stopwatch.StartNew();
 
                 for (var i = 0; i < iterations; i++)
@@ -32,14 +33,30 @@ namespace HttpReactor.Benchmark.Test
                     //message.WriteHeader("Connection", "Keep-Alive");
                     message.WriteHeader("Host", "localhost");
 
-                    message.Send(_100ms);
-
-                    using (var reader = new StreamReader(message.GetBodyStream()))
+                    try
                     {
-                        reader.ReadToEnd();
-                    }
+                        message.Send(_100ms);
 
-                    message.Recycle();
+                        using (var reader = new StreamReader(message.GetBodyStream()))
+                        {
+                            reader.ReadToEnd();
+                        }
+                    }
+                    catch (SocketException)
+                    {
+                        socket.Reconnect(ClientEndPoint, _100ms);
+
+                        message.Send(_100ms);
+
+                        using (var reader = new StreamReader(message.GetBodyStream()))
+                        {
+                            reader.ReadToEnd();
+                        }
+                    }
+                    finally
+                    {
+                        message.Recycle();
+                    }
                 }
 
                 var elapsed = stopwatch.Elapsed;
