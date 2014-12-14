@@ -4,7 +4,7 @@ using System.Text;
 
 namespace HttpReactor.Parser
 {
-    public sealed class HttpParser : IDisposable
+    internal sealed class HttpParser : IDisposable
     {
         private const string Success = "success";
         private readonly UnmanagedMemory _parser;

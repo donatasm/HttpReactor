@@ -4,7 +4,7 @@ using System.Net.Sockets;
 
 namespace HttpReactor.Transport
 {
-    public sealed class HttpSocket : IHttpSocket
+    internal sealed class HttpSocket : IHttpSocket
     {
         private readonly Socket _socket;
 

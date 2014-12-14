@@ -1,7 +1,9 @@
 ﻿namespace HttpReactor.Parser
 {
-    public enum HttpParserType
+    internal enum HttpParserType
     {
-        Request, Response, Both
+        Request,
+        Response,
+        Both
     }
 }

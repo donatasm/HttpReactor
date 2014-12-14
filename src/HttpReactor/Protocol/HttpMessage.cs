@@ -8,7 +8,7 @@ using HttpReactor.Util;
 
 namespace HttpReactor.Protocol
 {
-    public sealed class HttpMessage : IDisposable
+    internal sealed class HttpMessage : IDisposable
     {
         private static readonly ArraySegment<byte> EmptyBuffer = 
             new ArraySegment<byte>(new byte[0]);

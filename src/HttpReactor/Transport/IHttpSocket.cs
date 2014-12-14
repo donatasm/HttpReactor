@@ -3,7 +3,7 @@ using System.Net;
 
 namespace HttpReactor.Transport
 {
-    public interface IHttpSocket : IDisposable
+    internal interface IHttpSocket : IDisposable
     {
         void Connect(EndPoint endPoint, int timeoutMicros);
 
