@@ -12,9 +12,10 @@ namespace HttpReactor.Benchmark.Test
         public static void Main()
         {
             const int iterations = 100000;
-            var endPoint = new SingleEndPoint("127.0.0.1", 8080);
+            var endPoint = new SingleEndPoint("127.0.0.1", 80);
             var connectTimeout = TimeSpan.FromMilliseconds(100);
             var sendTimeout = TimeSpan.FromMilliseconds(100);
+            var http200s = 0;
             var socketExceptions = 0;
             var timeoutExceptions = 0;
 
@@ -31,6 +32,11 @@ namespace HttpReactor.Benchmark.Test
                     try
                     {
                         client.Send();
+
+                        if (client.Status == "OK")
+                        {
+                            http200s++;
+                        }
 
                         using (var reader = new StreamReader(client.GetBodyStream()))
                         {
@@ -55,6 +61,9 @@ namespace HttpReactor.Benchmark.Test
                 Console.WriteLine(elapsed);
                 Console.WriteLine("{0} ops/sec",
                     iterations / elapsed.TotalSeconds);
+                Console.WriteLine();
+                Console.WriteLine("Iterations: {0}", iterations);
+                Console.WriteLine("Http 200: {0}", http200s);
                 Console.WriteLine("Socket exceptions: {0}", socketExceptions);
                 Console.WriteLine("Timeout exception: {0}", timeoutExceptions);
             }

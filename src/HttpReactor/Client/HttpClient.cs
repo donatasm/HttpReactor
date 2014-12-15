@@ -42,6 +42,11 @@ namespace HttpReactor.Client
             _message.WriteHeader(header, value);
         }
 
+        public string Status
+        {
+            get { return _message.Status; }
+        }
+
         public Stream GetBodyStream()
         {
             return _message.GetBodyStream();
