@@ -11,17 +11,22 @@ namespace HttpReactor.Benchmark.Test
 {
     internal static class Benchmark
     {
-        private static readonly SingleEndPoint EndPoint = new SingleEndPoint("127.0.0.1", 80);
-        private const int MaxClients = 64;
-        private const int Iterations = 100000;
-        private static readonly TimeSpan ConnectTimeout = TimeSpan.FromMilliseconds(100);
-        private static readonly TimeSpan SendTimeout = TimeSpan.FromMilliseconds(100);
+        private static readonly IPEndPoint EndPoint =
+            new IPEndPoint(IPAddress.Loopback, 8080);
+        private static readonly RoundRobinEndPoints EndPoints =
+            RoundRobinEndPoints.FromIps(EndPoint);
+        private const int MaxClients = 16;
+        private const int Iterations = 10000;
+        private static readonly TimeSpan ConnectTimeout =
+            TimeSpan.FromMilliseconds(100);
+        private static readonly TimeSpan SendTimeout =
+            TimeSpan.FromMilliseconds(100);
 
         public static void Main()
         {
             using (var reactor =
-                new HttpReactor(EndPoint, MaxClients,
-                    ConnectTimeout, SendTimeout))
+                       new HttpReactor(EndPoints, MaxClients,
+                           ConnectTimeout, SendTimeout))
             {
                 var runnerTasks = new Task[MaxClients];
 
@@ -31,21 +36,6 @@ namespace HttpReactor.Benchmark.Test
                 }
 
                 Task.WaitAll(runnerTasks);
-            }
-        }
-
-        private sealed class SingleEndPoint : IEndPoints
-        {
-            private readonly IPEndPoint _endPoint;
-
-            public SingleEndPoint(string ip, int port)
-            {
-                _endPoint = new IPEndPoint(IPAddress.Parse(ip), port);
-            }
-
-            public EndPoint Next()
-            {
-                return _endPoint;
             }
         }
 
@@ -86,7 +76,7 @@ namespace HttpReactor.Benchmark.Test
                                 }
 
                                 using (var reader =
-                                    new StreamReader(client.GetBodyStream()))
+                                           new StreamReader(client.GetBodyStream()))
                                 {
                                     reader.ReadToEnd();
                                 }
@@ -95,7 +85,8 @@ namespace HttpReactor.Benchmark.Test
                             {
                                 int count;
 
-                                if (!socketExceptions.TryGetValue(e.ErrorCode, out count))
+                                if (!socketExceptions.TryGetValue(e.ErrorCode,
+                                        out count))
                                 {
                                     count = 1;
                                 }
@@ -121,13 +112,14 @@ namespace HttpReactor.Benchmark.Test
                         Console.WriteLine("------------------------------");
                         Console.WriteLine(elapsed);
                         Console.WriteLine("{0} ops/sec",
-                            iterations/elapsed.TotalSeconds);
+                            iterations / elapsed.TotalSeconds);
                         Console.WriteLine();
                         Console.WriteLine("Iterations: {0}", iterations);
                         Console.WriteLine("Http 200: {0}", http200s);
                         Console.WriteLine("Socket exceptions: {0}",
                             SocketExceptionsString(socketExceptions));
-                        Console.WriteLine("Timeout exception: {0}", timeoutExceptions);
+                        Console.WriteLine("Timeout exceptions: {0}",
+                            timeoutExceptions);
                         Console.WriteLine();
                     }
 
@@ -138,7 +130,7 @@ namespace HttpReactor.Benchmark.Test
                 IEnumerable<KeyValuePair<int, int>> socketExceptions)
             {
                 var exceptions = String.Join(", ",
-                    socketExceptions.Select(_ =>
+                                     socketExceptions.Select(_ =>
                         String.Format("{0}: {1}", _.Key, _.Value)));
 
                 return "[" + exceptions + "]";

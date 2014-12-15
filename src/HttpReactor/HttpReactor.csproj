@@ -55,6 +55,7 @@
     <Compile Include="Util\SystemTimestamp.cs" />
     <Compile Include="Client\HttpClient.cs" />
     <Compile Include="Util\Units.cs" />
+    <Compile Include="RoundRobinEndPoints.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
