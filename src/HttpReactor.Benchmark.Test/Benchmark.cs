@@ -69,7 +69,7 @@ namespace HttpReactor.Benchmark.Test
             }
         }
 
-        private sealed class SingleEndPoint : IEndPointProvider
+        private sealed class SingleEndPoint : IEndPoints
         {
             private readonly IPEndPoint _endPoint;
 

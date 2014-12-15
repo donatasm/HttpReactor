@@ -35,6 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Assembly.cs" />
+    <Compile Include="HttpReactor.cs" />
     <Compile Include="Parser\BytePin.cs" />
     <Compile Include="Parser\HttpCallback.cs" />
     <Compile Include="Parser\HttpDataCallback.cs" />
@@ -50,7 +51,7 @@
     <Compile Include="Transport\IHttpSocket.cs" />
     <Compile Include="Util\SystemTimestamp.cs" />
     <Compile Include="Client\HttpClient.cs" />
-    <Compile Include="Client\IEndPointProvider.cs" />
+    <Compile Include="Client\IEndPoints.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -74,7 +75,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Client\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

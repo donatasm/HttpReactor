@@ -10,22 +10,21 @@ namespace HttpReactor.Client
     {
         private const int DefaultBufferSize = 65536;
         private const int MaxHeadersSize = 8192;
-        private readonly ArraySegment<byte> _buffer;
         private readonly HttpSocket _socket;
         private readonly HttpMessage _message;
-        private readonly IEndPointProvider _endPointProvider;
+        private readonly IEndPoints _endPoints;
         private readonly int _connectTimeoutMicros;
         private readonly int _sendTimeoutMicros;
         private bool _isConnected;
         private bool _isFaulted;
 
-        public HttpClient(IEndPointProvider endPointProvider,
+        public HttpClient(IEndPoints endPoints,
             TimeSpan connectTimeout, TimeSpan sendTimeout)
         {
-            _buffer = new ArraySegment<byte>(new byte[DefaultBufferSize]);
+            var buffer = new ArraySegment<byte>(new byte[DefaultBufferSize]);
             _socket = new HttpSocket();
-            _message = new HttpMessage(_buffer, MaxHeadersSize, _socket);
-            _endPointProvider = endPointProvider;
+            _message = new HttpMessage(buffer, MaxHeadersSize, _socket);
+            _endPoints = endPoints;
             _connectTimeoutMicros = ToMicros(connectTimeout);
             _sendTimeoutMicros = ToMicros(sendTimeout);
             _isConnected = false;
@@ -56,14 +55,14 @@ namespace HttpReactor.Client
         {
             if (!_isConnected)
             {
-                _socket.Connect(_endPointProvider.Next(),
+                _socket.Connect(_endPoints.Next(),
                     _connectTimeoutMicros);
                 _isConnected = true;
             }
 
             if (_isFaulted)
             {
-                _socket.Reconnect(_endPointProvider.Next(),
+                _socket.Reconnect(_endPoints.Next(),
                     _connectTimeoutMicros);
                 _isFaulted = false;
             }
