@@ -11,11 +11,11 @@ namespace HttpReactor.Client
     {
         private const int DefaultBufferSize = 65536;
         private const int MaxHeadersSize = 8192;
-        private readonly HttpSocket _socket;
         private readonly HttpMessage _message;
         private readonly IEndPoints _endPoints;
         private readonly int _connectTimeoutMicros;
         private readonly int _sendTimeoutMicros;
+        private HttpSocket _socket;
         private bool _isConnected;
         private bool _isFaulted;
 
@@ -23,13 +23,12 @@ namespace HttpReactor.Client
             TimeSpan connectTimeout, TimeSpan sendTimeout)
         {
             var buffer = new ArraySegment<byte>(new byte[DefaultBufferSize]);
-            _socket = new HttpSocket();
-            _message = new HttpMessage(buffer, MaxHeadersSize, _socket);
+            _message = new HttpMessage(buffer, MaxHeadersSize);
             _endPoints = endPoints;
             _connectTimeoutMicros = connectTimeout.TotalMicroseconds();
             _sendTimeoutMicros = sendTimeout.TotalMicroseconds();
-            _isConnected = false;
-            _isFaulted = false;
+
+            SocketInit();
         }
 
         public void WriteMessageStart(string line)
@@ -54,22 +53,21 @@ namespace HttpReactor.Client
 
         public void Send()
         {
-            if (!_isConnected)
-            {
-                _socket.Connect(_endPoints.Next(),
-                    _connectTimeoutMicros);
-                _isConnected = true;
-            }
-
             if (_isFaulted)
             {
-                _socket.Reconnect(_endPoints.Next(),
-                    _connectTimeoutMicros);
-                _isFaulted = false;
+                _socket.Dispose();
+                SocketInit();
             }
 
             try
             {
+                if (!_isConnected)
+                {
+                    _socket.Connect(_endPoints.Next(),
+                        _connectTimeoutMicros);
+                    _isConnected = true;
+                }
+
                 _message.Send(_sendTimeoutMicros);
             }
             catch (SocketException)
@@ -93,6 +91,14 @@ namespace HttpReactor.Client
         {
             _message.Dispose();
             _socket.Dispose();
+        }
+
+        private void SocketInit()
+        {
+            _socket = new HttpSocket();
+            _message.Socket = _socket;
+            _isConnected = false;
+            _isFaulted = false;
         }
     }
 }

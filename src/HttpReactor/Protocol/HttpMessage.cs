@@ -18,21 +18,19 @@ namespace HttpReactor.Protocol
         private readonly BufferStream _requestHeadersStream;
         private readonly RequestBodyStream _requestBodyStream;
         private readonly ArraySegment<byte> _buffer;
-        private readonly IHttpSocket _socket;
         private readonly HttpParser _parser;
         private readonly int _maxHeadersLength;
+        private IHttpSocket _socket;
         private bool _messageComplete;
         private int _parsedBodyOffset;
         private int _parsedBodyLength;
 
-        public HttpMessage(ArraySegment<byte> buffer, int maxHeadersLength,
-            IHttpSocket socket)
+        public HttpMessage(ArraySegment<byte> buffer, int maxHeadersLength)
         {
             if (maxHeadersLength > buffer.Count)
                 throw new ArgumentOutOfRangeException("maxHeadersLength");
 
             _buffer = buffer;
-            _socket = socket;
             _maxHeadersLength = maxHeadersLength;
 
             _parser = new HttpParser(HttpParserType.Response,
@@ -89,6 +87,22 @@ namespace HttpReactor.Protocol
 
         public string Status { get; private set; }
 
+        public IHttpSocket Socket
+        {
+            get
+            {
+                if (_socket == null)
+                {
+// ReSharper disable once NotResolvedInText
+                    throw new ArgumentNullException("Socket",
+                        "Socket property cannot be null");
+                }
+
+                return _socket;
+            }
+            set { _socket = value; }
+        }
+
         public Stream GetBodyStream()
         {
             if (!_messageComplete)
@@ -112,19 +126,19 @@ namespace HttpReactor.Protocol
             _parser.Dispose();
         }
 
-        internal int SendAllHeaders(int microsLeft)
+        private int SendAllHeaders(int microsLeft)
         {
             return SendAll(ToArraySegment(_requestHeadersStream,
                 _buffer.Offset), microsLeft);
         }
 
-        internal int SendAllBody(int microsLeft)
+        private int SendAllBody(int microsLeft)
         {
             return SendAll(ToArraySegment(_requestBodyStream,
                 _maxHeadersLength), microsLeft);
         }
 
-        internal void ReceiveAll(int microsLeft)
+        private void ReceiveAll(int microsLeft)
         {
             ReceiveAll(_buffer, microsLeft);
         }
@@ -143,7 +157,7 @@ namespace HttpReactor.Protocol
             while (left > 0)
             {
                 var startTimestamp = SystemTimestamp.Current;
-                var sent = _socket.Send(array, offset, left, microsLeft);
+                var sent = Socket.Send(array, offset, left, microsLeft);
                 var elapsedMicros = SystemTimestamp.GetElapsedMicros(startTimestamp);
 
                 offset += sent;
@@ -165,7 +179,7 @@ namespace HttpReactor.Protocol
             while (!_messageComplete)
             {
                 var startTimestamp = SystemTimestamp.Current;
-                var read = _socket.Receive(array, offset,
+                var read = Socket.Receive(array, offset,
                                maxSize - totalReceived, microsLeft);
                 var elapsedMicros = SystemTimestamp.GetElapsedMicros(startTimestamp);
 

@@ -26,8 +26,9 @@ namespace HttpReactor.Test.Protocol
             var buffer = new ArraySegment<byte>(new byte[_64kb]);
             var response = CreateResponse(responseBodyLength);
             using (var socket = new HttpStreamSocket(response))
-            using (var message = new HttpMessage(buffer, _8kb, socket))
+            using (var message = new HttpMessage(buffer, _8kb))
             {
+                message.Socket = socket;
                 message.WriteMessageStart("GET / HTTP/1.1");
                 message.WriteHeader("User-Agent", "curl/7.37.0");
                 message.WriteHeader("Host", "localhost");
@@ -56,11 +57,8 @@ namespace HttpReactor.Test.Protocol
         public void MaxHeadersLengthShouldBeWithinMessageBuffer()
         {
             var buffer = new ArraySegment<byte>(new byte[_8kb]);
-            using (var socket = new HttpStreamSocket(""))
-            {
-                Assert.Throws<ArgumentOutOfRangeException>(() =>
-                    new HttpMessage(buffer, _8kb + 1, socket));
-            }
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new HttpMessage(buffer, _8kb + 1));
         }
 
         [Test]
@@ -69,8 +67,9 @@ namespace HttpReactor.Test.Protocol
             var buffer = new ArraySegment<byte>(new byte[_64kb]);
             var response = CreateResponse(_64kb);
             using (var socket = new HttpStreamSocket(response))
-            using (var message = new HttpMessage(buffer, _8kb, socket))
+            using (var message = new HttpMessage(buffer, _8kb))
             {
+                message.Socket = socket;
                 message.WriteMessageStart("GET / HTTP/1.1");
                 message.WriteHeader("User-Agent", "curl/7.37.0");
                 message.WriteHeader("Host", "localhost");
@@ -86,9 +85,7 @@ namespace HttpReactor.Test.Protocol
         public void SendRequestHeadersTooLarge()
         {
             var buffer = new ArraySegment<byte>(new byte[4]);
-            var response = CreateResponse(0);
-            using (var socket = new HttpStreamSocket(response))
-            using (var message = new HttpMessage(buffer, 4, socket))
+            using (var message = new HttpMessage(buffer, 4))
             {
                 var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
                     message.WriteMessageStart("GET / HTTP/1.1"));
@@ -101,9 +98,7 @@ namespace HttpReactor.Test.Protocol
         public void SendRequestBodyTooLarge()
         {
             var buffer = new ArraySegment<byte>(new byte[4]);
-            var response = CreateResponse(0);
-            using (var socket = new HttpStreamSocket(response))
-            using (var message = new HttpMessage(buffer, 4, socket))
+            using (var message = new HttpMessage(buffer, 4))
             using (var body = message.GetBodyStream())
             {
                 Assert.Throws<NotSupportedException>(() =>
@@ -115,8 +110,7 @@ namespace HttpReactor.Test.Protocol
         public void MultipleDispose()
         {
             var buffer = new ArraySegment<byte>(new byte[0]);
-            using (var socket = new HttpStreamSocket(""))
-            using (var message = new HttpMessage(buffer, 0, socket))
+            using (var message = new HttpMessage(buffer, 0))
             {
                 message.Dispose();
             }
@@ -129,8 +123,9 @@ namespace HttpReactor.Test.Protocol
             var buffer = new ArraySegment<byte>(new byte[_64kb]);
             var response = CreateResponse(responseBodyLength);
             using (var socket = new HttpStreamSocket(response))
-            using (var message = new HttpMessage(buffer, _8kb, socket))
+            using (var message = new HttpMessage(buffer, _8kb))
             {
+                message.Socket = socket;
                 message.Send(_100ms);
 
                 using (var reader = new StreamReader(message.GetBodyStream()))

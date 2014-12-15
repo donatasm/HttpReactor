@@ -7,7 +7,6 @@ namespace HttpReactor.Transport
     internal sealed class HttpSocket : IHttpSocket
     {
         private const int WSAEWOULDBLOCK = 10035;
-        private const int WSAEALREADY = 10037;
         private readonly Socket _socket;
 
         public HttpSocket()
@@ -28,20 +27,13 @@ namespace HttpReactor.Transport
             }
             catch (SocketException exception)
             {
-                if (exception.ErrorCode != WSAEWOULDBLOCK
-                    && exception.ErrorCode != WSAEALREADY)
+                if (exception.ErrorCode != WSAEWOULDBLOCK)
                 {
                     throw;
                 }
             }
 
             PollOrTimeout("connect", SelectMode.SelectWrite, timeoutMicros);
-        }
-
-        public void Reconnect(EndPoint endPoint, int timeoutMicros)
-        {
-            _socket.Disconnect(true);
-            Connect(endPoint, timeoutMicros);
         }
 
         public int Send(byte[] buffer, int offset, int count, int timeoutMicros)
