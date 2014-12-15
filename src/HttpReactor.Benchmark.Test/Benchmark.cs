@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using HttpReactor.Client;
 using System.IO;
 using System.Net.Sockets;
 using System.Diagnostics;
@@ -11,6 +10,7 @@ namespace HttpReactor.Benchmark.Test
     {
         public static void Main()
         {
+            const int maxClients = 1;
             const int iterations = 100000;
             var endPoint = new SingleEndPoint("127.0.0.1", 80);
             var connectTimeout = TimeSpan.FromMilliseconds(100);
@@ -19,41 +19,43 @@ namespace HttpReactor.Benchmark.Test
             var socketExceptions = 0;
             var timeoutExceptions = 0;
 
-            using (var client = new HttpClient(endPoint, connectTimeout, sendTimeout))
+            using (var reactor =
+                new HttpReactor(endPoint, maxClients,
+                    connectTimeout, sendTimeout))
             {
                 var stopwatch = Stopwatch.StartNew();
 
                 for (var i = 0; i < iterations; i++)
                 {
-                    client.WriteMessageStart("GET / HTTP/1.1");
-                    client.WriteHeader("User-Agent", "curl/7.37.0");
-                    client.WriteHeader("Host", "localhost");
-
-                    try
+                    using (var client = reactor.GetClient())
                     {
-                        client.Send();
+                        client.WriteMessageStart("GET / HTTP/1.1");
+                        client.WriteHeader("User-Agent", "curl/7.37.0");
+                        client.WriteHeader("Host", "localhost");
 
-                        if (client.Status == "OK")
+                        try
                         {
-                            http200s++;
-                        }
+                            client.Send();
 
-                        using (var reader = new StreamReader(client.GetBodyStream()))
-                        {
-                            reader.ReadToEnd();
+                            if (client.Status == "OK")
+                            {
+                                http200s++;
+                            }
+
+                            using (var reader =
+                                new StreamReader(client.GetBodyStream()))
+                            {
+                                reader.ReadToEnd();
+                            }
                         }
-                    }
-                    catch (SocketException)
-                    {
-                        socketExceptions++;
-                    }
-                    catch (TimeoutException)
-                    {
-                        timeoutExceptions++;
-                    }
-                    finally
-                    {
-                        client.Recycle();
+                        catch (SocketException)
+                        {
+                            socketExceptions++;
+                        }
+                        catch (TimeoutException)
+                        {
+                            timeoutExceptions++;
+                        }
                     }
                 }
 

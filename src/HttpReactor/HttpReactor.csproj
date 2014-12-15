@@ -35,7 +35,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Assembly.cs" />
+    <Compile Include="Client\IHttpClient.cs" />
     <Compile Include="HttpReactor.cs" />
+    <Compile Include="HttpReactorException.cs" />
+    <Compile Include="IEndPoints.cs" />
     <Compile Include="Parser\BytePin.cs" />
     <Compile Include="Parser\HttpCallback.cs" />
     <Compile Include="Parser\HttpDataCallback.cs" />
@@ -51,7 +54,7 @@
     <Compile Include="Transport\IHttpSocket.cs" />
     <Compile Include="Util\SystemTimestamp.cs" />
     <Compile Include="Client\HttpClient.cs" />
-    <Compile Include="Client\IEndPoints.cs" />
+    <Compile Include="Util\Units.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

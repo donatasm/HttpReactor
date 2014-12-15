@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace HttpReactor.Client
+namespace HttpReactor
 {
     public interface IEndPoints
     {

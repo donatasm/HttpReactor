@@ -3,10 +3,11 @@ using HttpReactor.Transport;
 using HttpReactor.Protocol;
 using System.IO;
 using System.Net.Sockets;
+using HttpReactor.Util;
 
 namespace HttpReactor.Client
 {
-    public sealed class HttpClient : IDisposable
+    internal sealed class HttpClient : IHttpClient
     {
         private const int DefaultBufferSize = 65536;
         private const int MaxHeadersSize = 8192;
@@ -25,8 +26,8 @@ namespace HttpReactor.Client
             _socket = new HttpSocket();
             _message = new HttpMessage(buffer, MaxHeadersSize, _socket);
             _endPoints = endPoints;
-            _connectTimeoutMicros = ToMicros(connectTimeout);
-            _sendTimeoutMicros = ToMicros(sendTimeout);
+            _connectTimeoutMicros = connectTimeout.TotalMicroseconds();
+            _sendTimeoutMicros = sendTimeout.TotalMicroseconds();
             _isConnected = false;
             _isFaulted = false;
         }
@@ -92,11 +93,6 @@ namespace HttpReactor.Client
         {
             _message.Dispose();
             _socket.Dispose();
-        }
-
-        private static int ToMicros(TimeSpan timeSpan)
-        {
-            return (int)(timeSpan.TotalMilliseconds * 1000);
         }
     }
 }
