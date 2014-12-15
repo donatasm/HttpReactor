@@ -10,7 +10,7 @@ namespace HttpReactor.Benchmark.Test
     {
         public static void Main()
         {
-            const int maxClients = 1;
+            const int maxClients = 64;
             const int iterations = 100000;
             var endPoint = new SingleEndPoint("127.0.0.1", 80);
             var connectTimeout = TimeSpan.FromMilliseconds(100);

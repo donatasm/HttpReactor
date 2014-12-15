@@ -6,6 +6,8 @@ namespace HttpReactor.Transport
 {
     internal sealed class HttpSocket : IHttpSocket
     {
+        private const int WSAEWOULDBLOCK = 10035;
+        private const int WSAEALREADY = 10037;
         private readonly Socket _socket;
 
         public HttpSocket()
@@ -26,8 +28,8 @@ namespace HttpReactor.Transport
             }
             catch (SocketException exception)
             {
-                // WSAEWOULDBLOCK 10035
-                if (exception.ErrorCode != (int)SocketError.WouldBlock)
+                if (exception.ErrorCode != WSAEWOULDBLOCK
+                    && exception.ErrorCode != WSAEALREADY)
                 {
                     throw;
                 }
