@@ -55,8 +55,7 @@ namespace HttpReactor.Client
         {
             if (_isFaulted)
             {
-                _socket.Dispose();
-                SocketInit();
+                SocketReInit();
             }
 
             try
@@ -80,6 +79,13 @@ namespace HttpReactor.Client
                 _isFaulted = true;
                 throw;
             }
+            finally
+            {
+                if (!_message.ShouldKeepAlive)
+                {
+                    SocketReInit();
+                }
+            }
         }
 
         public void Recycle()
@@ -99,6 +105,12 @@ namespace HttpReactor.Client
             _message.Socket = _socket;
             _isConnected = false;
             _isFaulted = false;
+        }
+
+        private void SocketReInit()
+        {
+            _socket.Dispose();
+            SocketInit();
         }
     }
 }

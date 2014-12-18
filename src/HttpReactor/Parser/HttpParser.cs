@@ -54,6 +54,11 @@ namespace HttpReactor.Parser
             }
         }
 
+        public bool ShouldKeepAlive()
+        {
+            return HttpParserNative.ShouldKeepAlive(_parser.IntPtr) != 0;
+        }
+
         public void Dispose()
         {
             _parser.Dispose();

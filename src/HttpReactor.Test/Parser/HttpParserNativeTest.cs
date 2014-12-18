@@ -123,6 +123,87 @@ namespace HttpReactor.Test.Parser
         }
 
         [Test]
+        public void KeepAliveTrueConnectionHeader()
+        {
+            const string request = "HTTP/1.1 200 OK\r\n" +
+                "Connection: Keep-Alive\r\n" +
+                "Content-Length: 0\r\n" +
+                "\r\n";
+
+            var keepAlive = GetKeepAliveValueFor(request);
+
+            Assert.AreNotEqual(0, keepAlive);
+        }
+
+        [Test]
+        public void KeepAliveFalseConnectionHeader()
+        {
+            const string request = "HTTP/1.1 200 OK\r\n" +
+                "Connection: Close\r\n" +
+                "Content-Length: 0\r\n" +
+                "\r\n";
+
+            var keepAlive = GetKeepAliveValueFor(request);
+
+            Assert.AreEqual(0, keepAlive);
+        }
+
+        [Test]
+        public void KeepAliveTrue()
+        {
+            const string request = "HTTP/1.1 200 OK\r\n" +
+                "Content-Length: 0\r\n" +
+                "\r\n";
+
+            var keepAlive = GetKeepAliveValueFor(request);
+
+            Assert.AreNotEqual(0, keepAlive);
+        }
+
+        public int GetKeepAliveValueFor(string request)
+        {
+            int? keepAlive = null;
+
+            var settings = new HttpParserSettings
+            {
+                OnMessageBegin = parser => 0,
+                OnStatus = (parser, status, len) => 0,
+                OnHeaderField = (parser, field, len) => 0,
+                OnHeaderValue = (parser, value, len) => 0,
+                OnHeadersComplete = parser =>
+                {
+                    keepAlive = HttpParserNative.ShouldKeepAlive(parser);
+                    return 0;
+                },
+                OnBody = (parser, body, len) => 0,
+                OnMessageComplete = parser => 
+                {
+                    keepAlive = HttpParserNative.ShouldKeepAlive(parser);
+                    return 0;
+                }
+            };
+
+            var requestBytes = Encoding.UTF8.GetBytes(request);
+            var length = new UIntPtr((uint)requestBytes.Length);
+
+            using (var parser = AllocateForParser())
+            using (var pin = new BytePin(requestBytes))
+            {
+                HttpParserNative.Init(parser.IntPtr, HttpParserType.Response);
+                var parsed = HttpParserNative.Execute(parser.IntPtr,
+                    ref settings, pin[0], length);
+
+                var error = HttpParserNative.ErrorMessageString(parser.IntPtr);
+
+                Assert.AreEqual("success", error);
+                Assert.AreEqual(length, parsed);
+                Assert.IsNotNull(keepAlive);
+
+                return keepAlive.Value;
+            }
+        }
+
+        [Test]
         public void ErrorMessage()
         {
             using (var parser = AllocateForParser())

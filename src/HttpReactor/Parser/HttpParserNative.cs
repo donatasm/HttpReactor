@@ -27,6 +27,9 @@ namespace HttpReactor.Parser
         [DllImport(HttpParserLib, EntryPoint = "http_parser_err_message")]
         public static extern IntPtr ErrorMessage(IntPtr parser);
 
+        [DllImport(HttpParserLib, EntryPoint = "http_should_keep_alive")]
+        public static extern int ShouldKeepAlive(IntPtr parser);
+
         public static string ErrorMessageString(IntPtr parser)
         {
             return AsString(ErrorMessage(parser));

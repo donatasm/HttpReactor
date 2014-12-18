@@ -24,6 +24,7 @@ namespace HttpReactor.Protocol
         private bool _messageComplete;
         private int _parsedBodyOffset;
         private int _parsedBodyLength;
+        private bool _shouldKeepAlive;
 
         public HttpMessage(ArraySegment<byte> buffer, int maxHeadersLength)
         {
@@ -54,6 +55,7 @@ namespace HttpReactor.Protocol
             _messageComplete = false;
             _requestHeadersStream.Position = 0;
             _requestBodyStream.Position = 0;
+            _shouldKeepAlive = false;
         }
 
         public void WriteMessageStart(string line)
@@ -86,6 +88,14 @@ namespace HttpReactor.Protocol
         }
 
         public string Status { get; private set; }
+
+        public bool ShouldKeepAlive
+        {
+            get
+            {
+                return _shouldKeepAlive;
+            }
+        }
 
         public IHttpSocket Socket
         {
@@ -239,6 +249,7 @@ namespace HttpReactor.Protocol
 
             public void OnHeadersComplete()
             {
+                SetShouldKeepAlive();
             }
 
             public void OnBody(ArraySegment<byte> body)
@@ -254,6 +265,13 @@ namespace HttpReactor.Protocol
             public void OnMessageComplete()
             {
                 _message._messageComplete = true;
+                SetShouldKeepAlive();
+            }
+
+            private void SetShouldKeepAlive()
+            {
+                _message._shouldKeepAlive =
+                    _message._parser.ShouldKeepAlive();
             }
         }
 
