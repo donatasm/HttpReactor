@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using HttpReactor.Transport;
 using HttpReactor.Protocol;
 using System.IO;
@@ -51,6 +52,8 @@ namespace HttpReactor.Client
             return _message.GetBodyStream();
         }
 
+        public EndPoint EndPoint { get; private set; }
+
         public void Send()
         {
             if (_isFaulted)
@@ -62,8 +65,8 @@ namespace HttpReactor.Client
             {
                 if (!_isConnected)
                 {
-                    _socket.Connect(_endPoints.Next(),
-                        _connectTimeoutMicros);
+                    EndPoint = _endPoints.Next();
+                    _socket.Connect(EndPoint, _connectTimeoutMicros);
                     _isConnected = true;
                 }
 
@@ -105,6 +108,7 @@ namespace HttpReactor.Client
             _message.Socket = _socket;
             _isConnected = false;
             _isFaulted = false;
+            EndPoint = null;
         }
 
         private void SocketReInit()
