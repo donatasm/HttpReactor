@@ -11,22 +11,28 @@ namespace HttpReactor.Benchmark.Test
 {
     internal static class Benchmark
     {
-        private static readonly IPEndPoint EndPoint =
-            new IPEndPoint(IPAddress.Loopback, 8080);
-        private static readonly RoundRobinEndPoints EndPoints =
-            RoundRobinEndPoints.FromIps(EndPoint);
         private const int MaxClients = 16;
         private const int Iterations = 10000;
+
+        private static readonly IPEndPoint EndPoint =
+            new IPEndPoint(IPAddress.Loopback, 8080);
+
+        private static readonly RoundRobinEndPoints EndPoints =
+            RoundRobinEndPoints.FromIps(EndPoint);
+
         private static readonly TimeSpan ConnectTimeout =
             TimeSpan.FromMilliseconds(100);
+
         private static readonly TimeSpan SendTimeout =
             TimeSpan.FromMilliseconds(100);
 
+        private static readonly TimeSpan ConnectionExpire =
+            TimeSpan.FromSeconds(3);
+
         public static void Main()
         {
-            using (var reactor =
-                       new HttpReactor(EndPoints, MaxClients,
-                           ConnectTimeout, SendTimeout))
+            using (var reactor = new HttpReactor(EndPoints, MaxClients,
+                ConnectTimeout, SendTimeout, ConnectionExpire))
             {
                 var runnerTasks = new Task[MaxClients];
 
@@ -76,7 +82,7 @@ namespace HttpReactor.Benchmark.Test
                                 }
 
                                 using (var reader =
-                                           new StreamReader(client.GetBodyStream()))
+                                    new StreamReader(client.GetBodyStream()))
                                 {
                                     reader.ReadToEnd();
                                 }
@@ -86,7 +92,7 @@ namespace HttpReactor.Benchmark.Test
                                 int count;
 
                                 if (!socketExceptions.TryGetValue(e.ErrorCode,
-                                        out count))
+                                    out count))
                                 {
                                     count = 1;
                                 }
@@ -130,7 +136,7 @@ namespace HttpReactor.Benchmark.Test
                 IEnumerable<KeyValuePair<int, int>> socketExceptions)
             {
                 var exceptions = String.Join(", ",
-                                     socketExceptions.Select(_ =>
+                    socketExceptions.Select(_ =>
                         String.Format("{0}: {1}", _.Key, _.Value)));
 
                 return "[" + exceptions + "]";

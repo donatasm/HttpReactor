@@ -11,14 +11,15 @@ namespace HttpReactor
         private readonly ConcurrentQueue<HttpPooledClient> _clientQueue;
 
         public HttpReactor(IEndPoints endPoints, int maxClients,
-            TimeSpan connectTimeout, TimeSpan sendTimeout)
+            TimeSpan connectTimeout, TimeSpan sendTimeout,
+            TimeSpan connectionExpire)
         {
             _clientQueue = new ConcurrentQueue<HttpPooledClient>();
 
             for (var i = 0; i < maxClients; i++)
             {
                 var client = new HttpPooledClient(this, endPoints,
-                    connectTimeout, sendTimeout);
+                    connectTimeout, sendTimeout, connectionExpire);
 
                 _clientQueue.Enqueue(client);
             }
@@ -55,11 +56,12 @@ namespace HttpReactor
             private readonly HttpClient _client;
 
             public HttpPooledClient(HttpReactor reactor, IEndPoints endPoints,
-                TimeSpan connectTimeout, TimeSpan sendTimeout)
+                TimeSpan connectTimeout, TimeSpan sendTimeout,
+                TimeSpan connectionExpire)
             {
                 _reactor = reactor;
                 _client = new HttpClient(endPoints,
-                    connectTimeout, sendTimeout);
+                    connectTimeout, sendTimeout, connectionExpire);
             }
 
             public void WriteMessageStart(string line)

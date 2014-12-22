@@ -11,23 +11,38 @@ namespace HttpReactor.Client
     internal sealed class HttpClient : IHttpClient
     {
         private const int DefaultBufferSize = 65536;
-        private const int MaxHeadersSize = 8192;
+        private const int DefaultMaxHeadersSize = 8192;
+        private static readonly TimeSpan DefaultConnectionExpire =
+            TimeSpan.MaxValue;
         private readonly HttpMessage _message;
         private readonly IEndPoints _endPoints;
         private readonly int _connectTimeoutMicros;
         private readonly int _sendTimeoutMicros;
+        private readonly long _connectionExpireMicros;
         private HttpSocket _socket;
+        private long _connectTimestamp;
         private bool _isConnected;
         private bool _isFaulted;
 
         public HttpClient(IEndPoints endPoints,
             TimeSpan connectTimeout, TimeSpan sendTimeout)
+            : this(endPoints, connectTimeout, sendTimeout,
+                DefaultConnectionExpire)
+        {
+        }
+
+        public HttpClient(IEndPoints endPoints,
+            TimeSpan connectTimeout, TimeSpan sendTimeout,
+            TimeSpan connectionExpire)
         {
             var buffer = new ArraySegment<byte>(new byte[DefaultBufferSize]);
-            _message = new HttpMessage(buffer, MaxHeadersSize);
+            _message = new HttpMessage(buffer, DefaultMaxHeadersSize);
             _endPoints = endPoints;
             _connectTimeoutMicros = connectTimeout.TotalMicroseconds();
             _sendTimeoutMicros = sendTimeout.TotalMicroseconds();
+
+            _connectionExpireMicros = (connectionExpire == DefaultConnectionExpire)
+                ? Int64.MaxValue : connectionExpire.TotalMicroseconds();
 
             SocketInit();
         }
@@ -65,9 +80,7 @@ namespace HttpReactor.Client
             {
                 if (!_isConnected)
                 {
-                    EndPoint = _endPoints.Next();
-                    _socket.Connect(EndPoint, _connectTimeoutMicros);
-                    _isConnected = true;
+                    SocketConnect();
                 }
 
                 _message.Send(_sendTimeoutMicros);
@@ -84,9 +97,10 @@ namespace HttpReactor.Client
             }
             finally
             {
-                if (!_message.ShouldKeepAlive)
+                if (!_message.ShouldKeepAlive || IsConnectionExpired)
                 {
                     SocketReInit();
+                    // TODO: poll(0) connect here
                 }
             }
         }
@@ -102,10 +116,19 @@ namespace HttpReactor.Client
             _socket.Dispose();
         }
 
+        private void SocketConnect()
+        {
+            EndPoint = _endPoints.Next();
+            _socket.Connect(EndPoint, _connectTimeoutMicros);
+            _connectTimestamp = SystemTimestamp.Current;
+            _isConnected = true;
+        }
+
         private void SocketInit()
         {
             _socket = new HttpSocket();
             _message.Socket = _socket;
+            _connectTimestamp = 0;
             _isConnected = false;
             _isFaulted = false;
             EndPoint = null;
@@ -115,6 +138,21 @@ namespace HttpReactor.Client
         {
             _socket.Dispose();
             SocketInit();
+        }
+
+        private bool IsConnectionExpired
+        {
+            get 
+            {
+                if (_connectTimestamp == 0)
+                {
+                    return false;
+                }
+
+                var elapsedMicros = SystemTimestamp.GetElapsedMicros(_connectTimestamp);
+
+                return elapsedMicros > _connectionExpireMicros;
+            }
         }
     }
 }
