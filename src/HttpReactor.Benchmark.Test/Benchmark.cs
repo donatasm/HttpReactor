@@ -49,10 +49,12 @@ namespace HttpReactor.Benchmark.Test
         {
             private static readonly object _syncRoot = new object();
             private readonly HttpReactor _reactor;
+            private readonly double[] _latencyMillis;
 
             public Runner(HttpReactor reactor)
             {
                 _reactor = reactor;
+                _latencyMillis = new double[Iterations];
             }
 
             public Task Start(int iterations)
@@ -66,6 +68,8 @@ namespace HttpReactor.Benchmark.Test
 
                     for (var i = 0; i < iterations; i++)
                     {
+                        var startMillis = stopwatch.ElapsedMilliseconds;
+
                         using (var client = _reactor.GetClient())
                         {
                             client.WriteMessageStart("GET / HTTP/1.1");
@@ -108,9 +112,12 @@ namespace HttpReactor.Benchmark.Test
                                 timeoutExceptions++;
                             }
                         }
+
+                        _latencyMillis[i] = stopwatch.ElapsedMilliseconds - startMillis;
                     }
 
                     var elapsed = stopwatch.Elapsed;
+                    Array.Sort(_latencyMillis);
 
                     lock (_syncRoot)
                     {
@@ -127,9 +134,20 @@ namespace HttpReactor.Benchmark.Test
                         Console.WriteLine("Timeout exceptions: {0}",
                             timeoutExceptions);
                         Console.WriteLine();
+                        Console.WriteLine("p90%: {0}", Percentile(90));
+                        Console.WriteLine("p98%: {0}", Percentile(98));
+                        Console.WriteLine("p99%: {0}", Percentile(99));
+                        Console.WriteLine("p99.99%: {0}", Percentile(99.99));
+                        Console.WriteLine();
                     }
 
                 }, TaskCreationOptions.LongRunning);
+            }
+
+            private double Percentile(double p)
+            {
+                var n = (int)Math.Ceiling(p/100*_latencyMillis.Length) - 1;
+                return _latencyMillis[n];
             }
 
             private static string SocketExceptionsString(
