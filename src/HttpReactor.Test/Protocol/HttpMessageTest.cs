@@ -197,7 +197,11 @@ namespace HttpReactor.Test.Protocol
             {
             }
 
-            public void Reconnect(EndPoint endPoint, int timeoutMicros)
+            public void ConnectDontBlock(EndPoint endPoint)
+            {
+            }
+
+            public void ConnectPoll(int timeoutMicros)
             {
             }
 

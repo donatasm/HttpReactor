@@ -22,6 +22,7 @@ namespace HttpReactor.Client
         private HttpSocket _socket;
         private long _connectTimestamp;
         private bool _isConnected;
+        private bool _isConnecting;
         private bool _isFaulted;
 
         public HttpClient(IEndPoints endPoints,
@@ -78,10 +79,7 @@ namespace HttpReactor.Client
 
             try
             {
-                if (!_isConnected)
-                {
-                    SocketConnect();
-                }
+                EnsureSocketConnected();
 
                 _message.Send(_sendTimeoutMicros);
             }
@@ -100,7 +98,7 @@ namespace HttpReactor.Client
                 if (!_message.ShouldKeepAlive || IsConnectionExpired)
                 {
                     SocketReInit();
-                    // TODO: poll(0) connect here
+                    SocketConnectDontBlock();
                 }
             }
         }
@@ -116,10 +114,43 @@ namespace HttpReactor.Client
             _socket.Dispose();
         }
 
-        private void SocketConnect()
+        private void EnsureSocketConnected()
+        {
+            try
+            {
+                if (!_isConnected)
+                {
+                    if (!_isConnecting)
+                    {
+                        SocketConnectDontBlock();
+                    }
+
+                    SocketConnectPoll();
+                }
+            }
+            finally
+            {
+                _isConnecting = false;
+            }
+        }
+
+        private void SocketConnectDontBlock()
         {
             EndPoint = _endPoints.Next();
-            _socket.Connect(EndPoint, _connectTimeoutMicros);
+
+            try
+            {
+                _socket.ConnectDontBlock(EndPoint);
+            }
+            finally
+            {
+                _isConnecting = true;                
+            }
+        }
+
+        private void SocketConnectPoll()
+        {
+            _socket.ConnectPoll(_connectTimeoutMicros);
             _connectTimestamp = SystemTimestamp.Current;
             _isConnected = true;
         }
@@ -130,6 +161,7 @@ namespace HttpReactor.Client
             _message.Socket = _socket;
             _connectTimestamp = 0;
             _isConnected = false;
+            _isConnecting = false;
             _isFaulted = false;
             EndPoint = null;
         }

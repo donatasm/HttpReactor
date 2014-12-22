@@ -21,6 +21,12 @@ namespace HttpReactor.Transport
 
         public void Connect(EndPoint endPoint, int timeoutMicros)
         {
+            ConnectDontBlock(endPoint);
+            ConnectPoll(timeoutMicros);
+        }
+
+        public void ConnectDontBlock(EndPoint endPoint)
+        {
             try
             {
                 _socket.Connect(endPoint);
@@ -32,8 +38,11 @@ namespace HttpReactor.Transport
                     throw;
                 }
             }
+        }
 
-            PollOrTimeout("connect", SelectMode.SelectWrite, timeoutMicros);
+        public void ConnectPoll(int timeoutMicros)
+        {
+            PollOrTimeout("connect", SelectMode.SelectWrite, timeoutMicros);            
         }
 
         public int Send(byte[] buffer, int offset, int count, int timeoutMicros)
